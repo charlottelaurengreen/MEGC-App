@@ -8,7 +8,6 @@
     "scheme": "merchantsgolf",
     "userInterfaceStyle": "light",
     "ios": {
-      "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.merchantsgolf.members",
       "supportsTablet": false,
       "config": {
