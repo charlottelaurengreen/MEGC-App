@@ -20,7 +20,7 @@ The member app for Merchants of Edinburgh Golf Club, for iOS and Android. It's b
 
 ## First-time setup
 
-1. **Create the backend.** Make a free project at [supabase.com](https://supabase.com). In the SQL editor, run `supabase/schema.sql`, then `supabase/seed.sql`.
+1. **Create the backend.** Make a free project at [supabase.com](https://supabase.com). Apply the database with `npx supabase db push --db-url "<connection string>"`. Alternatively, paste the two files in `supabase/migrations/` into the SQL editor in order (schema first, then seed).
 2. **Connect the app.** Copy `.env.example` to `.env.local` and paste in the project URL and publishable key from *Project Settings → API*.
 3. **Add a test member.** In *Authentication → Users → Add user*, create a user with an email and password. Then set their details in the `members` table: name, member number, handicap index and `valid_to`. To make someone staff, set `is_staff` to `true`.
 4. **Run it.**
@@ -46,7 +46,7 @@ Booking rules are enforced on the server: capacity, the booking window, the canc
 
 ## Before going live: TODO
 
-- [ ] **Course card.** `seed.sql` uses the design's sample yardages and stroke indexes. Replace them with the official card, and add `green_lat`/`green_lng` per hole to turn on GPS.
+- [ ] **Course card.** The seed migration uses the design's sample yardages and stroke indexes. Replace them with the official card, and add `green_lat`/`green_lng` per hole to turn on GPS.
 - [ ] **Prices** in `club_settings` and `lesson_types`.
 - [ ] **Payments.** Set `club_settings.payments_url` to the club's payment page. There are no in-app card payments yet.
 - [ ] **QR format.** The card encodes `MERCHANTS:<member number>`. Confirm it matches what the club's scanners expect (`src/app/check-in.tsx`).
@@ -82,5 +82,5 @@ src/app/            screens (Expo Router; each file is a route)
 src/components/     branded UI pieces and icons
 src/lib/            Supabase client, data functions, session, formatting
 src/theme.ts        brand colours and type
-supabase/           database schema and starter data
+supabase/migrations/ database schema and starter data
 ```
