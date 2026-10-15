@@ -32,6 +32,12 @@ export default function More() {
           <Icon name="chevron" size={20} color={C.gold} />
         </Pressable>
 
+        {member?.is_staff && (
+          <List>
+            <Row icon="people" title="Staff tools" sub="Tee sheet, card scanner, news, events, scorecards" href="/staff" />
+          </List>
+        )}
+
         <Sec>
           <H>My account</H>
           <List>

@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
 
 import { Band, BarHeader, Btn, Card, ErrorBox, H, IconTile, KV, Label, Page, Panel, Scroll, Sec, Small, Title } from '@/components/ui';
 import { checkIn, getMyTeeBookings } from '@/lib/api';
@@ -44,14 +45,18 @@ export default function CheckIn() {
               <Title style={{ color: C.white, fontSize: 20 }}>{member ? `${member.first_name} ${member.last_name}` : ''}</Title>
             </View>
           </View>
-          <View style={{ borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.hairOnBlue, paddingVertical: 18, alignItems: 'center', gap: 4 }}>
+          <View style={{ backgroundColor: C.white, padding: 18, alignItems: 'center' }} accessible accessibilityLabel="Membership QR code">
+            {/* Read by the staff scanner in this app (More → Staff tools → Scan a membership card). */}
+            {member && <QRCode value={`MEGC:${member.id}`} size={180} color={C.blue} backgroundColor={C.white} />}
+          </View>
+          <View style={{ alignItems: 'center', gap: 4 }}>
             <Label style={{ color: C.dim }}>Member no.</Label>
-            <Text style={{ fontSize: 44, fontWeight: '700', letterSpacing: 4, color: C.white }}>{member?.member_no ?? ''}</Text>
+            <Text style={{ fontSize: 36, fontWeight: '700', letterSpacing: 4, color: C.white }}>{member?.member_no ?? ''}</Text>
           </View>
           <KV onBlue k="Category" v={member?.category ?? ''} />
           {member?.valid_to && <KV onBlue k="Valid to" v={f.fullDate(member.valid_to + 'T12:00:00Z')} />}
         </Panel>
-        <Small style={{ color: C.muted, textAlign: 'center' }}>Show this card at the pro shop or the competition desk.</Small>
+        <Small style={{ color: C.muted, textAlign: 'center' }}>Show this card at the pro shop or the competition desk to be scanned.</Small>
 
         <Sec>
           <H>Today’s tee time</H>

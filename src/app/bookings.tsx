@@ -4,6 +4,7 @@ import { Alert, Text } from 'react-native';
 
 import { BarHeader, Btn, Btns, Card, Chip, Chips, Empty, ErrorBox, Label, Loading, Page, Scroll, Small, Tag } from '@/components/ui';
 import { cancelLesson, cancelTable, cancelTeeBooking, getMyEntries, getMyLessons, getMyTables, getMyTeeBookings, withdrawFromEvent } from '@/lib/api';
+import { addToCalendar } from '@/lib/calendar';
 import * as f from '@/lib/format';
 import { useQuery } from '@/lib/use-query';
 import { C } from '@/theme';
@@ -91,6 +92,10 @@ export default function MyBookings() {
                 {it.changeHref && <Btn label="Change" variant="line" sm href={it.changeHref} />}
                 <Btn label={it.cancelLabel ?? 'Cancel'} variant="line" sm onPress={() => confirmCancel(it)} />
               </Btns>
+            )}
+            {when === 'upcoming' && (
+              <Btn label="Add to calendar" variant="line" sm onPress={() =>
+                addToCalendar({ title: `${it.kind} at Merchants: ${it.title}`, start: new Date(it.at), minutes: it.kind === 'Tee time' ? 240 : 120, notes: it.detail })} />
             )}
           </Card>
         ))}

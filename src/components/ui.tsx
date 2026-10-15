@@ -7,7 +7,9 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
+  type TextInputProps,
   type StyleProp,
   type TextStyle,
   type ViewStyle,
@@ -302,6 +304,29 @@ export function DayStrip({ days, value, onChange }: { days: { iso: string; dow: 
   );
 }
 
+/** Labelled text input in the brand style. */
+export function Field({ label, value, onChange, placeholder, multiline, keyboardType, autoCapitalize = 'sentences' }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string; multiline?: boolean;
+  keyboardType?: TextInputProps['keyboardType']; autoCapitalize?: TextInputProps['autoCapitalize'];
+}) {
+  return (
+    <View style={{ gap: 6 }}>
+      <Text style={[T.label, { color: C.blue }]}>{label}</Text>
+      <TextInput
+        accessibilityLabel={label}
+        value={value}
+        onChangeText={onChange}
+        placeholder={placeholder}
+        placeholderTextColor={C.faint}
+        multiline={multiline}
+        keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
+        style={[s.input, multiline && { minHeight: 96, textAlignVertical: 'top' }]}
+      />
+    </View>
+  );
+}
+
 // ─── States ────────────────────────────────────────────────────────────────
 
 export const Loading = () => (
@@ -334,5 +359,6 @@ const s = StyleSheet.create({
   btn: { alignItems: 'center', justifyContent: 'center', borderWidth: 1.5 },
   chip: { minHeight: 38, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   stepBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  input: { fontSize: 15, paddingVertical: 13, paddingHorizontal: 14, borderWidth: 1, borderColor: C.gray, borderRadius: 2, color: C.blue, backgroundColor: C.white },
   day: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 10, borderWidth: 1, borderColor: C.gray, backgroundColor: C.white },
 });

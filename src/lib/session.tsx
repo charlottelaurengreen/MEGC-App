@@ -2,6 +2,7 @@ import type { Session } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useState, type PropsWithChildren } from 'react';
 
 import { getMe, type Member } from './api';
+import { registerForPush, unregisterPush } from './push';
 import { supabase } from './supabase';
 
 type Ctx = {
@@ -32,13 +33,17 @@ export function SessionProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
       setSession(data.session);
-      if (data.session) await refreshMember();
+      if (data.session) {
+        await refreshMember();
+        registerForPush();
+      }
       setLoading(false);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
       if (s) refreshMember();
       else setMember(null);
+      if (event === 'SIGNED_IN') registerForPush();
     });
     return () => sub.subscription.unsubscribe();
   }, [refreshMember]);
@@ -57,6 +62,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
       if (error) throw new Error(error.message);
     },
     signOut: async () => {
+      await unregisterPush();
       await supabase.auth.signOut();
     },
   };

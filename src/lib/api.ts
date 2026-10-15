@@ -265,6 +265,49 @@ export const getMyLessons = async (when: 'upcoming' | 'past') => {
   );
 };
 
+// ─── Staff ─────────────────────────────────────────────────────────────────
+// Each of these is refused by the database unless the signed-in member is staff.
+
+export type StaffBooking = {
+  id: string; booker: string; member_no: string; players: Player[]; buggy: boolean; trolley: boolean; checked_in_at: string | null;
+};
+export type StaffSlot = { slot_id: string; starts_at: string; capacity: number; blocked_reason: string | null; bookings: StaffBooking[] };
+export type CardLookup = {
+  member_id: string; name: string; member_no: string; category: string; valid_to: string | null;
+  booking_id: string | null; starts_at: string | null; players: number | null; checked_in_at: string | null;
+};
+export type QueuedCard = {
+  id: string; member_id: string; name: string; member_no: string; played_on: string; tee: string | null; gender: Gender | null;
+  course_handicap: number; marker_name: string | null; holes: HoleScore[]; gross: number | null; posted_at: string | null;
+  event_title: string | null; handicap_index: number | null;
+};
+
+export const staffTeeSheet = (day: string) => run<StaffSlot[]>(supabase.rpc('staff_tee_sheet', { p_day: day }));
+export const staffCheckIn = (bookingId: string) =>
+  run(supabase.from('tee_bookings').update({ checked_in_at: new Date().toISOString() }).eq('id', bookingId));
+export const staffCancelBooking = (bookingId: string) =>
+  run(supabase.from('tee_bookings').update({ status: 'cancelled' }).eq('id', bookingId));
+export const staffBlockSlot = (slotId: string, reason: string | null) =>
+  run(supabase.from('tee_slots').update({ blocked_reason: reason }).eq('id', slotId));
+export const staffLookupCard = async (code: string) =>
+  (await run<CardLookup[]>(supabase.rpc('staff_lookup_card', { p_code: code })))[0];
+
+export const staffSetCourseStatus = (status: string, note: string) =>
+  run(supabase.from('club_settings').update({ course_status: status, course_note: note }).eq('id', true));
+export const staffPostNews = (p: { category: string; title: string; body: string; author: string; pinned: boolean }) =>
+  run(supabase.from('news_posts').insert(p));
+/** Adds a notification for everyone (or one member); the database pushes it to phones. */
+export const staffNotify = (p: { category: string; title: string; body: string; link: string | null; member_id?: string | null }) =>
+  run(supabase.from('notifications').insert(p));
+
+export const staffSaveEvent = (e: Partial<ClubEvent> & { id?: string }) =>
+  e.id ? run(supabase.from('events').update(e).eq('id', e.id)) : run(supabase.from('events').insert(e));
+export const staffDeleteEvent = (id: string) => run(supabase.from('events').delete().eq('id', id));
+
+export const staffScorecards = (posted: boolean) => run<QueuedCard[]>(supabase.rpc('staff_scorecards', { p_posted: posted }));
+export const staffMarkPosted = (round: string, newIndex: number | null, differential: number | null) =>
+  run(supabase.rpc('staff_mark_posted', { p_round: round, p_new_index: newIndex, p_differential: differential }));
+
 // ─── Account ───────────────────────────────────────────────────────────────
 
 export const getTransactions = async () =>

@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/icon';
 import { Body, Btn, Display, GoldRule, KV, Loading, Panel } from '@/components/ui';
 import { getTeeBooking } from '@/lib/api';
+import { addToCalendar } from '@/lib/calendar';
 import * as f from '@/lib/format';
 import { useQuery } from '@/lib/use-query';
 import { C } from '@/theme';
@@ -38,6 +39,8 @@ export default function Booked() {
             <KV onBlue k="Charged to" v="Member account" />
           </Panel>
           <View style={{ gap: 10 }}>
+            <Btn label="Add to calendar" variant="onblue" onPress={() =>
+              addToCalendar({ title: 'Golf at Merchants', start, minutes: 240, notes: `${who}${b.buggy ? ' · Buggy booked' : ''}` })} />
             <Btn label="View my bookings" variant="gold" onPress={() => router.replace('/bookings')} />
             <Btn label="Back to home" variant="ghostblue" onPress={() => router.dismissTo('/')} />
           </View>

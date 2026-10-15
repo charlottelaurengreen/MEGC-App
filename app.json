@@ -45,6 +45,26 @@
         {
           "locationWhenInUsePermission": "Merchants uses your location on the course to show distances to the green."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#011B42"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Staff use the camera to scan members’ membership cards.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Merchants adds your tee times and bookings to your calendar."
+        }
       ]
     ],
     "experiments": {

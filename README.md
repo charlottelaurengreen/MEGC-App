@@ -28,7 +28,7 @@ The member app for Merchants of Edinburgh Golf Club, for iOS and Android. It's b
    npm install
    npx expo start
    ```
-   Scan the QR code with **Expo Go** on your phone (App Store or Google Play).
+   Scan the QR code with **Expo Go** on your phone (App Store or Google Play). Everything works in Expo Go except push notifications, and possibly Add to calendar. For those, make a development build: `npx eas-cli@latest build --profile development --platform android` (or `ios`), install it on the phone, then `npx expo start`.
 
 ## Running the club day to day
 
@@ -58,13 +58,28 @@ Booking rules are enforced on the server: capacity, the booking window, the canc
 
 - **Tee sheet:** The club uses BRS Golf for visitor bookings. Running a separate tee sheet in the app risks double-booking unless BRS is retired for members, or the app reads and writes BRS (this needs BRS's API, by arrangement with BRS).
 
+## Staff tools
+
+Members with `is_staff = true` see **More → Staff tools**:
+
+- **Tee sheet:** every booking with names, check-in, cancel, and block or unblock times.
+- **Scan a membership card:** the phone camera reads the QR code on a member's card, shows their membership and today's tee time, and checks them in. No separate scanners needed.
+- **Post & notify:** course status (the green band on Home), news posts, and alerts pushed to members' phones.
+- **Events:** add events, announce them, and start or end live scoring for the leaderboard.
+- **Scorecards:** the handicap secretary's queue. Enter each card on the Scottish Golf system, then mark it posted, optionally with the new index. The member's app updates and they're notified.
+
+## Push notifications
+
+Every row added to `notifications` is pushed to members' phones by the database, through Expo's push service. Members who have switched that kind of alert off don't get it. Two jobs run automatically: tee-time reminders at 17:00 UTC the day before, and adding a new day to the tee sheet at 02:00 so it always runs 14 days ahead.
+
+Push needs the app linked to EAS (`npx eas-cli@latest init`) and a development or store build. Expo Go on Android can't receive push, and on iOS push needs an Apple Developer account.
+
 ## Not built yet
 
-- Push notifications. Notifications currently appear in the app only.
-- Automatic WHS submission to Scottish Golf. Submitted cards go to the club, and the handicap secretary posts them.
-- Visitor booking. The visitor button opens the club's BRS Golf booking page.
-- QR membership cards (the club has no scanners yet), Add to calendar and Apple/Google Wallet cards.
-- A staff admin screen. For now, staff use the Supabase dashboard.
+- **Automatic WHS submission.** Scottish Golf only accepts scores from accredited club-management software, so there is no public API to connect to. Use the Scorecards queue instead.
+- **Visitor booking in the app.** This needs online card payments (for example, a Stripe account) and a decision about BRS. The visitor button opens BRS.
+- **Apple and Google Wallet passes.** These need a Pass Type certificate from the Apple Developer account and a Google Wallet issuer account, plus a small server to sign the passes.
+- **Adding members from the app.** Use Supabase → Authentication → Users.
 
 ## Publishing to the stores
 
