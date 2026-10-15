@@ -86,7 +86,7 @@ export default function SignIn() {
           </View>
           {error && <Small style={{ color: C.white }} >{error}</Small>}
           <Btn label="Sign in" variant="gold" onPress={submit} loading={busy} style={{ marginTop: 8 }} />
-          <Btn label="Visitors: book online" variant="onblue" onPress={() => WebBrowser.openBrowserAsync('https://www.merchantsgolf.com/')} />
+          <Btn label="Visitors: book online" variant="onblue" onPress={() => WebBrowser.openBrowserAsync('https://visitors.brsgolf.com/merchantsofedinburgh#/course/1')} />
         </View>
 
         <View style={{ flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: 6 }}>

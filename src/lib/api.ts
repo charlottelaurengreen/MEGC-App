@@ -29,9 +29,36 @@ export type Settings = {
   trolley_price: number | null;
   payments_url: string | null;
   club_phone: string;
+  visitor_booking_url: string;
 };
 
-export type Hole = { hole: number; par: number; yards: number; stroke_index: number; green_lat: number | null; green_lng: number | null };
+export type Hole = {
+  hole: number;
+  name: string | null;
+  par: number;            // Men+
+  stroke_index: number;   // Men+
+  par_women: number | null;
+  si_women: number | null;
+  yards: number;          // Black tee
+  yards_blue: number | null;
+  yards_green: number | null;
+  green_lat: number | null;
+  green_lng: number | null;
+};
+
+export type Gender = 'Men' | 'Women';
+export type CourseTee = { tee: string; gender: Gender; course_rating: number; slope: number; par: number };
+
+/** Par, stroke index and yardage for a hole from a given tee and card. */
+export const holeFor = (h: Hole, tee: string, gender: Gender) => ({
+  par: gender === 'Women' ? h.par_women ?? h.par : h.par,
+  si: gender === 'Women' ? h.si_women ?? h.stroke_index : h.stroke_index,
+  yards: tee === 'Blue' ? h.yards_blue ?? h.yards : tee === 'Green' ? h.yards_green ?? h.yards : h.yards,
+});
+
+/** WHS course handicap: index × slope ÷ 113 + (course rating − par), rounded. */
+export const courseHandicap = (index: number, t: CourseTee) =>
+  Math.round(index * (t.slope / 113) + (t.course_rating - t.par));
 
 export type SheetSlot = {
   slot_id: string;
@@ -83,6 +110,8 @@ export type Round = {
   event_id: string | null;
   played_on: string;
   course_handicap: number;
+  tee: string | null;
+  gender: Gender | null;
   marker_name: string | null;
   holes: HoleScore[];
   status: 'in_progress' | 'submitted';
@@ -121,6 +150,7 @@ export const searchMembers = (q: string) =>
 // ─── Course ────────────────────────────────────────────────────────────────
 
 export const getHoles = () => run<Hole[]>(supabase.from('course_holes').select('*').order('hole'));
+export const getTees = () => run<CourseTee[]>(supabase.from('course_tees').select('*').order('sort'));
 
 // ─── Tee times ─────────────────────────────────────────────────────────────
 
@@ -184,10 +214,10 @@ export const getOpenRound = async () =>
       .order('updated_at', { ascending: false }).limit(1).maybeSingle(),
   );
 
-export const startRound = async (courseHandicap: number, eventId: string | null) =>
+export const startRound = async (courseHandicap: number, eventId: string | null, tee: string, gender: Gender) =>
   run<Round>(
     supabase.from('rounds')
-      .insert({ member_id: await uid(), course_handicap: courseHandicap, event_id: eventId, holes: Array(18).fill(null) })
+      .insert({ member_id: await uid(), course_handicap: courseHandicap, event_id: eventId, tee, gender, holes: Array(18).fill(null) })
       .select().single(),
   );
 

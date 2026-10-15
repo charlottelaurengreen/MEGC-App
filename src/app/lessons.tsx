@@ -49,7 +49,7 @@ export default function Lessons() {
           </View>
           <View style={{ flex: 1, gap: 2 }}>
             <Title>The club professional</Title>
-            <Small style={{ color: C.muted }}>PGA Professional · Swing, short game and juniors</Small>
+            <Small style={{ color: C.muted }}>PGA AAT Professional · 0131 447 1219 (option 4)</Small>
           </View>
         </Card>
 

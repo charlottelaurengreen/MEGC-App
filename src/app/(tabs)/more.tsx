@@ -38,7 +38,7 @@ export default function More() {
             <Row icon="card" title="Account & billing" sub="Invoices, statement, bar card" href="/account" />
             <Row icon="calendar" title="My bookings" sub="Tee times, competitions, tables, lessons" href="/bookings" />
             <Row icon="bars" title="Handicap" sub={member?.handicap_index != null ? `Index ${member.handicap_index} · World Handicap System` : 'World Handicap System'} href="/handicap" />
-            <Row icon="qr" title="Membership card" sub="QR code for entry and check-in" href="/check-in" />
+            <Row icon="qr" title="Membership card" sub="Your card and today’s check-in" href="/check-in" />
             <Row icon="bell" title="Notifications" sub="Course alerts, competitions, news" href="/notifications" />
           </List>
         </Sec>
@@ -56,7 +56,8 @@ export default function More() {
           <List>
             <Row icon="megaphone" title="Club news & local rules" sub="Notices from the club office" href="/news" />
             <Row icon="star" title="Reviews" sub="Leave us a review" onPress={web('https://www.merchantsgolf.com/#reviews')} />
-            <Row icon="pin" title="Contact the club" sub="0131 447 1219 · 10 Craighill Gardens, EH10 5PY" onPress={() => Linking.openURL('tel:+441314471219')} />
+            <Row icon="pin" title="Call the club" sub="0131 447 1219 · 10 Craighill Gardens, EH10 5PY" onPress={() => Linking.openURL('tel:+441314471219')} />
+            <Row icon="megaphone" title="Email the club manager" sub="clubmanager@merchantsgolf.com" onPress={() => Linking.openURL('mailto:clubmanager@merchantsgolf.com')} />
           </List>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {SOCIAL.map(([label, icon, url]) => (

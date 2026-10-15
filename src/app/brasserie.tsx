@@ -47,6 +47,7 @@ export default function Brasserie() {
           <Label style={{ color: C.gold }}>The Brasserie at Merchants</Label>
           <Display>Book a table</Display>
           <Small style={{ color: C.dim }}>Seasonal Scottish produce, open to members and visitors. Brunch, lunch and dinner with views to the Pentland Hills.</Small>
+          <Small style={{ color: C.white }}>Thursday Supper Club, 5pm–7.30pm · 2 courses £24, 3 courses £28</Small>
           <View style={{ alignSelf: 'flex-start' }}>
             <Btn label="View menus" variant="onblue" sm onPress={() => WebBrowser.openBrowserAsync('https://www.merchantsgolf.com/menus/')} />
           </View>
@@ -86,7 +87,7 @@ export default function Brasserie() {
         {err && <ErrorBox message={err} />}
         <Btn label={chosen ? `Reserve for ${party} at ${chosen}` : 'Choose a time'} variant="gold" disabled={!chosen} loading={busy} onPress={reserve} />
         <Small style={{ color: C.muted }}>
-          Free cancellation up to 24 hours before. Large parties and private dining: call {settings?.club_phone ?? 'the club'}.
+          Free cancellation up to 24 hours before. Large parties and private dining: call {settings?.club_phone ?? 'the club'} or email brasserie@merchantsgolf.com.
         </Small>
       </Scroll>
     </Page>

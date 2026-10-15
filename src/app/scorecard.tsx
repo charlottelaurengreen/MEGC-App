@@ -3,7 +3,10 @@ import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { BarHeader, Btn, Chip, Chips, ErrorBox, H, KV, Label, Loading, Page, Panel, Scroll, Sec, Small, Stepper } from '@/components/ui';
-import { getEvents, getHoles, getMyEntries, getOpenRound, saveRound, startRound, type Hole, type HoleScore, type Round } from '@/lib/api';
+import {
+  courseHandicap, getEvents, getHoles, getMyEntries, getOpenRound, getTees, holeFor, saveRound, startRound,
+  type Gender, type Hole, type HoleScore, type Round,
+} from '@/lib/api';
 import { useSession } from '@/lib/session';
 import { useQuery } from '@/lib/use-query';
 import { C } from '@/theme';
@@ -20,25 +23,39 @@ export default function Scorecard() {
 
   if (error) return <Page><BarHeader title="Scorecard" /><Scroll><ErrorBox message={error} onRetry={reload} /></Scroll></Page>;
   if (!data) return <Page><BarHeader title="Scorecard" /><Loading /></Page>;
-  return data.round ? <Card holes={data.holes} initial={data.round} /> : <Start onStarted={reload} />;
+  if (!data.round) return <Start onStarted={reload} />;
+  // Score against the par and stroke index of the card this round is played off.
+  const r = data.round;
+  const holes = data.holes.map((h) => {
+    const x = holeFor(h, r.tee ?? 'Black', r.gender ?? 'Men');
+    return { ...h, par: x.par, stroke_index: x.si };
+  });
+  return <Card holes={holes} initial={r} />;
 }
 
 function Start({ onStarted }: { onStarted: () => void }) {
   const { member } = useSession();
-  const [ch, setCh] = useState(Math.round(member?.handicap_index ?? 0));
+  const [gender, setGender] = useState<Gender>('Men');
+  const [tee, setTee] = useState('Black');
+  const [override, setOverride] = useState<number | null>(null);
   const [eventId, setEventId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  // Competitions in play today that this member has entered.
-  const { data: comps } = useQuery(async () => {
-    const [events, entries] = await Promise.all([getEvents(), getMyEntries()]);
-    return events.filter((e) => e.is_live && entries.some((x) => x.event_id === e.id));
+  // Tee ratings, and competitions in play today that this member has entered.
+  const { data } = useQuery(async () => {
+    const [tees, events, entries] = await Promise.all([getTees(), getEvents(), getMyEntries()]);
+    return { tees, comps: events.filter((e) => e.is_live && entries.some((x) => x.event_id === e.id)) };
   });
+  const comps = data?.comps;
+  const rating = data?.tees.find((t) => t.tee === tee && t.gender === gender);
+  const index = member?.handicap_index;
+  const computed = rating && index != null ? courseHandicap(index, rating) : Math.round(index ?? 0);
+  const ch = override ?? computed;
 
   const start = async () => {
     setBusy(true);
     try {
-      await startRound(ch, eventId);
+      await startRound(ch, eventId, tee, gender);
       onStarted();
     } catch (e) {
       setErr((e as Error).message);
@@ -52,8 +69,20 @@ function Start({ onStarted }: { onStarted: () => void }) {
       <Scroll>
         <Sec>
           <H>New round</H>
-          <KV k="Course handicap" v={<Stepper value={ch} minusLabel="Lower" plusLabel="Higher" onMinus={() => setCh(Math.max(0, ch - 1))} onPlus={() => setCh(Math.min(54, ch + 1))} />} />
-          <Small style={{ color: C.muted }}>Check the course handicap table in the clubhouse for your tee.</Small>
+          <Label style={{ color: C.muted }}>Card</Label>
+          <Chips>
+            {(['Men', 'Women'] as const).map((g) => <Chip key={g} label={`${g}+`} on={gender === g} onPress={() => { setGender(g); setOverride(null); }} />)}
+          </Chips>
+          <Label style={{ color: C.muted }}>Tee</Label>
+          <Chips>
+            {['Black', 'Blue', 'Green'].map((t) => <Chip key={t} label={t} on={tee === t} onPress={() => { setTee(t); setOverride(null); }} />)}
+          </Chips>
+          <KV k="Course handicap" v={<Stepper value={ch} minusLabel="Lower" plusLabel="Higher" onMinus={() => setOverride(Math.max(0, ch - 1))} onPlus={() => setOverride(Math.min(54, ch + 1))} />} />
+          <Small style={{ color: C.muted }}>
+            {rating && index != null
+              ? `Worked out from your index of ${index} (course rating ${rating.course_rating}, slope ${rating.slope}). Check it against the table in the clubhouse.`
+              : 'Check the course handicap table in the clubhouse for your tee.'}
+          </Small>
         </Sec>
         {!!comps?.length && (
           <Sec>
@@ -130,9 +159,12 @@ function Card({ holes, initial }: { holes: Hole[]; initial: Round }) {
     <Page>
       <BarHeader title="Scorecard" />
       <Scroll gap={20}>
-        <Small style={{ color: C.muted }}>Course handicap {ch}</Small>
+        <Small style={{ color: C.muted }}>
+          {initial.tee ?? 'Black'} tees · {initial.gender ?? 'Men'}+ card · Course handicap {ch}
+        </Small>
         <Panel style={{ gap: 16 }}>
-          <Label style={{ color: C.gold }}>Hole {h.hole} · Par {h.par} · Stroke index {h.stroke_index}</Label>
+          <Label style={{ color: C.gold }}>Hole {h.hole}{h.name ? ` · ${h.name}` : ''}</Label>
+          <Small style={{ color: C.dim }}>Par {h.par} · Stroke index {h.stroke_index}</Small>
           <View style={st.pstep}>
             <Text style={st.lbl}>Strokes</Text>
             <Stepper onBlue value={cur.s} minusLabel="One fewer stroke" plusLabel="One more stroke"

@@ -3,10 +3,12 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
-import { Btn, ErrorBox, Label, Loading, Page, Panel, Scroll, Small, TopHeader } from '@/components/ui';
-import { getHoles, type Hole } from '@/lib/api';
+import { Btn, Chip, Chips, ErrorBox, Label, Loading, Page, Panel, Scroll, Small, TopHeader } from '@/components/ui';
+import { getHoles, getTees, holeFor, type Gender } from '@/lib/api';
 import { useQuery } from '@/lib/use-query';
 import { C } from '@/theme';
+
+const TEES = ['Black', 'Blue', 'Green'] as const;
 
 /** Distance in yards between two coordinates (haversine). */
 function yards(a: { latitude: number; longitude: number }, lat: number, lng: number) {
@@ -19,12 +21,17 @@ function yards(a: { latitude: number; longitude: number }, lat: number, lng: num
 }
 
 export default function Course() {
-  const { data: holes, error, reload } = useQuery(getHoles);
+  const { data, error, reload } = useQuery(async () => {
+    const [holes, tees] = await Promise.all([getHoles(), getTees()]);
+    return { holes, tees };
+  });
   const [i, setI] = useState(0);
+  const [tee, setTee] = useState<(typeof TEES)[number]>('Black');
+  const [gender, setGender] = useState<Gender>('Men');
   const [pos, setPos] = useState<Location.LocationObjectCoords | null>(null);
   const [gps, setGps] = useState<'off' | 'denied' | 'on'>('off');
 
-  const hasGreens = !!holes?.some((h) => h.green_lat != null);
+  const hasGreens = !!data?.holes.some((h) => h.green_lat != null);
 
   useEffect(() => {
     if (!hasGreens) return;
@@ -39,30 +46,46 @@ export default function Course() {
   }, [hasGreens]);
 
   if (error) return <Page><TopHeader title="The course" /><Scroll><ErrorBox message={error} onRetry={reload} /></Scroll></Page>;
-  if (!holes) return <Page><TopHeader title="The course" /><Loading /></Page>;
+  if (!data) return <Page><TopHeader title="The course" /><Loading /></Page>;
 
+  const { holes, tees } = data;
   const h = holes[i];
-  const par = holes.reduce((a, x) => a + x.par, 0);
+  const card = holeFor(h, tee, gender);
+  const rating = tees.find((t) => t.tee === tee && t.gender === gender);
+  const totalYards = holes.reduce((a, x) => a + holeFor(x, tee, gender).yards, 0);
   const go = (k: number) => setI((k + holes.length) % holes.length);
   const toGreen = pos && h.green_lat != null && h.green_lng != null ? yards(pos, h.green_lat, h.green_lng) : null;
 
   return (
     <Page>
-      <TopHeader title="The course" subtitle={`Par ${par} · Ben Sayers design, remodelled by James Braid in 1936`} />
+      <TopHeader title="The course" subtitle="Easter and Wester Craiglockhart Hills · Ben Sayers, remodelled by James Braid in 1936" />
       <Scroll gap={20}>
+        <View style={{ gap: 10 }}>
+          <Chips>
+            {TEES.map((t) => <Chip key={t} label={t} on={tee === t} onPress={() => setTee(t)} />)}
+            <View style={{ width: 8 }} />
+            {(['Men', 'Women'] as const).map((g) => <Chip key={g} label={`${g}+`} on={gender === g} onPress={() => setGender(g)} />)}
+          </Chips>
+          {rating && (
+            <Small style={{ color: C.muted }}>
+              Par {rating.par} · {totalYards.toLocaleString('en-GB')} yards · Course rating {rating.course_rating} · Slope {rating.slope}
+            </Small>
+          )}
+        </View>
+
         <Panel style={{ paddingVertical: 14, paddingHorizontal: 12, gap: 12 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Pressable onPress={() => go(i - 1)} accessibilityRole="button" accessibilityLabel="Previous hole" style={st.step}><Icon name="back" color={C.gold} /></Pressable>
             <View style={{ flex: 1, alignItems: 'center', gap: 2 }}>
-              <Label style={{ color: C.gold }}>{i < 9 ? 'Front nine' : 'Back nine'}</Label>
+              <Label style={{ color: C.gold }}>{h.name ?? (i < 9 ? 'Front nine' : 'Back nine')}</Label>
               <Text style={{ fontSize: 28, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: C.white }}>Hole {h.hole}</Text>
             </View>
             <Pressable onPress={() => go(i + 1)} accessibilityRole="button" accessibilityLabel="Next hole" style={st.step}><Icon name="chevron" color={C.gold} /></Pressable>
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-around', borderTopWidth: 1, borderTopColor: C.hairOnBlue, paddingTop: 10 }}>
-            <Stat k="Par" v={h.par} />
-            <Stat k="Yards" v={h.yards} />
-            <Stat k="Stroke index" v={h.stroke_index} />
+            <Stat k="Par" v={card.par} />
+            <Stat k="Yards" v={card.yards} />
+            <Stat k="Stroke index" v={card.si} />
           </View>
         </Panel>
 
@@ -71,11 +94,11 @@ export default function Course() {
             <View key={n} style={{ gap: 6 }}>
               <Label style={{ color: C.muted }}>{n === 0 ? 'Front nine' : 'Back nine'}</Label>
               <View style={{ flexDirection: 'row', gap: 4 }}>
-                {nine.map((x: Hole) => {
+                {nine.map((x) => {
                   const on = x.hole === h.hole;
                   return (
                     <Pressable key={x.hole} onPress={() => setI(x.hole - 1)} accessibilityRole="button" accessibilityState={{ selected: on }}
-                      accessibilityLabel={`Hole ${x.hole}, par ${x.par}`} style={[st.hole, on && { backgroundColor: C.blue, borderColor: C.blue }]}>
+                      accessibilityLabel={`Hole ${x.hole}${x.name ? `, ${x.name}` : ''}`} style={[st.hole, on && { backgroundColor: C.blue, borderColor: C.blue }]}>
                       <Text style={{ fontSize: 15, fontWeight: '700', color: on ? C.gold : C.blue }}>{x.hole}</Text>
                     </Pressable>
                   );
@@ -86,9 +109,9 @@ export default function Course() {
         </View>
 
         <View style={st.dist}>
-          <Label style={{ color: C.gold }}>To the middle of the green</Label>
+          <Label style={{ color: C.white }}>To the middle of the green</Label>
           <Text style={{ fontSize: 48, fontWeight: '700', color: C.white }}>{toGreen != null ? toGreen : '—'}</Text>
-          <Small style={{ color: C.dim }}>
+          <Small style={{ color: C.white }}>
             {!hasGreens ? 'GPS distances appear once the club adds green positions.'
               : gps === 'denied' ? 'Allow location access in Settings to see distances.'
               : toGreen == null ? 'Finding your position…' : 'Yards · live GPS'}
